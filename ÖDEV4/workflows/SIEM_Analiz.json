@@ -1,0 +1,1164 @@
+{
+  "name": "SIEM_Analiz",
+  "nodes": [
+    {
+      "parameters": {
+        "sendTo": "={{ $('Google Sheets Trigger').first().json['E-posta'] }}",
+        "subject": "SIEM Olay Talebiniz Alındı",
+        "message": "=Merhaba,  SIEM olay bildiriminiz başarıyla alınmıştır.  Olay Başlığı: {{ $('Google Sheets Trigger').first().json['Olay Başlığı'] }}  Analiz işlemi başlatılmıştır. Yapay zeka destekli inceleme tamamlandığında size tekrar dönüş yapılacaktır.  SOC Ekibi",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1296,
+        0
+      ],
+      "id": "28e735d7-2784-41da-9b91-3f42a137c970",
+      "name": "Send a message",
+      "webhookId": "df3e75e8-04fd-4037-beaf-bc5c85b798fc",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "PE94QcxhEYKHl6AS",
+          "name": "Gmail OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Google Sheets Trigger').first().json['SIEM Logu'] }}",
+        "options": {
+          "systemMessage": "Sen bir SOC analistisin.\n\nGörev:\n- SIEM logunu analiz et\n- Risk skoru üret\n- Saldırı tipini belirle\n\nKurallar:\n- Brute force → 70-90\n- Malware → 80-100\n- Suspicious login → 50-70\n- Unknown activity → minimum 20\n\nÇıktı formatı:\n\nÖZET:\nSALDIRI TÜRÜ:\nRİSK SKORU:\nIOC:\nÇÖZÜM:"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1536,
+        0
+      ],
+      "id": "3a828a7b-2196-4c4b-ae32-8286e09d74ed",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a6cd7eed-c79a-4984-8780-850e009130d7",
+              "name": "AI_Output",
+              "value": "={{ $('AI Agent').first().json.output }}",
+              "type": "string"
+            },
+            {
+              "id": "a516f2da-aee7-4ca3-8cb5-4033ae80b083",
+              "name": "AI_Risk_Score",
+              "value": "={{ \nNumber(\n$('AI Agent').first().json.output.match(/\\d+/)?.[0] || 0\n)\n}}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2448,
+        0
+      ],
+      "id": "eeaa23ac-c340-4bd4-9b21-b3e88fcda1d1",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Google Sheets Trigger').first().json['E-posta'] }}",
+        "subject": "SIEM Olay Analizi Tamamlandı",
+        "message": "=Merhaba,\n\nGönderdiğiniz SIEM olayı analiz edilmiştir.\n\nYapay Zeka Analiz Sonucu:\n\n{{ $('Edit Fields').item.json.AI_Output }}\n\nİyi günler dileriz.\nSOC Ekibi",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        2912,
+        0
+      ],
+      "id": "4a891403-c687-42b4-b56b-0094e7fdb076",
+      "name": "Send a message1",
+      "webhookId": "ccb1e712-f988-4c16-b0cd-7f16164c2361",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "PE94QcxhEYKHl6AS",
+          "name": "Gmail OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "documentId": {
+          "__rl": true,
+          "value": "1V0Yfb8PyK8YuZtJfCw8iSYd27nJuZWL_lxYcV__D8PU",
+          "mode": "list",
+          "cachedResultName": "Başlıksız form (Yanıtlar)",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1V0Yfb8PyK8YuZtJfCw8iSYd27nJuZWL_lxYcV__D8PU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 75017300,
+          "mode": "list",
+          "cachedResultName": "Form Yanıtları 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1V0Yfb8PyK8YuZtJfCw8iSYd27nJuZWL_lxYcV__D8PU/edit#gid=75017300"
+        },
+        "event": "rowAdded",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTrigger",
+      "typeVersion": 1,
+      "position": [
+        416,
+        0
+      ],
+      "id": "11f7ae72-47be-4d18-9eb2-6acfff307bca",
+      "name": "Google Sheets Trigger",
+      "credentials": {
+        "googleSheetsTriggerOAuth2Api": {
+          "id": "3jMzSjUZKUh4mKo8",
+          "name": "Google Sheets Trigger OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "llama-3.3-70b-versatile",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        1536,
+        256
+      ],
+      "id": "7e3bd764-0dba-4a17-947b-acc80ddf34c3",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "Zb7AtwNHHbdFtt78",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "value": "app9NIHLGmlLCdx5r",
+          "mode": "list",
+          "cachedResultName": "SIEM_Analiz",
+          "cachedResultUrl": "https://airtable.com/app9NIHLGmlLCdx5r"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblZGCAiv2O9gjqxj",
+          "mode": "list",
+          "cachedResultName": "Threat Intelligence",
+          "cachedResultUrl": "https://airtable.com/app9NIHLGmlLCdx5r/tblZGCAiv2O9gjqxj"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Threat Type": "={{ $('AI Agent').first().json.output.match(/SALDIRI TÜRÜ:\\s*(.*)/)?.[1] }}",
+            "Description": "={{ $('AI Agent').first().json.output }}",
+            "Recommended Action": "={{ $('AI Agent').first().json.output.match(/ÇÖZÜM:\\s*(.*)/)?.[1] }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Threat Type",
+              "displayName": "Threat Type",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Severity",
+              "displayName": "Severity",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Description",
+              "displayName": "Description",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Recommended Action",
+              "displayName": "Recommended Action",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        2144,
+        0
+      ],
+      "id": "cd430cd4-79b4-42f2-8d8d-09a87a041c8d",
+      "name": "Create a record3",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "06BpS9xqhCrt48pb",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        624,
+        0
+      ],
+      "id": "acb3f6ef-1b1e-4d24-9251-ccb3b96be6c3",
+      "name": "Limit"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "value": "app9NIHLGmlLCdx5r",
+          "mode": "list",
+          "cachedResultName": "SIEM_Analiz",
+          "cachedResultUrl": "https://airtable.com/app9NIHLGmlLCdx5r"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblExXJIAxhGtNzw0",
+          "mode": "list",
+          "cachedResultName": "Incidents",
+          "cachedResultUrl": "https://airtable.com/app9NIHLGmlLCdx5r/tblExXJIAxhGtNzw0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $('Create Incident').item.json.id }}",
+            "Status": "Resolved",
+            "AI Summary": "={{ $('AI Agent').first().json.output }}",
+            "AI Risk Score": "={{ $('Edit Fields').first().json.AI_Risk_Score }}",
+            "AI Analysis History": "={{ [ $('Create AI History').first().json.id ] }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": false
+            },
+            {
+              "id": "Incident ID",
+              "displayName": "Incident ID",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Title",
+              "displayName": "Title",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "User Email",
+              "displayName": "User Email",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Departments",
+              "displayName": "Departments",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "IT",
+                  "value": "IT"
+                },
+                {
+                  "name": "SOC",
+                  "value": "SOC"
+                },
+                {
+                  "name": "Network",
+                  "value": "Network"
+                },
+                {
+                  "name": "Security",
+                  "value": "Security"
+                },
+                {
+                  "name": "DevOps",
+                  "value": "DevOps"
+                },
+                {
+                  "name": "Other",
+                  "value": "Other"
+                },
+                {
+                  "name": "",
+                  "value": ""
+                }
+              ],
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Raw Log",
+              "displayName": "Raw Log",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Priority",
+              "displayName": "Priority",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Yüksek",
+                  "value": "Yüksek"
+                },
+                {
+                  "name": "Orta",
+                  "value": "Orta"
+                },
+                {
+                  "name": "Düşük",
+                  "value": "Düşük"
+                },
+                {
+                  "name": "Kritik",
+                  "value": "Kritik"
+                },
+                {
+                  "name": "",
+                  "value": ""
+                }
+              ],
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Open",
+                  "value": "Open"
+                },
+                {
+                  "name": "In Progress",
+                  "value": "In Progress"
+                },
+                {
+                  "name": "Under Investigation",
+                  "value": "Under Investigation"
+                },
+                {
+                  "name": "Resolved",
+                  "value": "Resolved"
+                },
+                {
+                  "name": "Closed",
+                  "value": "Closed"
+                },
+                {
+                  "name": "False Positive",
+                  "value": "False Positive"
+                },
+                {
+                  "name": "",
+                  "value": ""
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "AI Summary",
+              "displayName": "AI Summary",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "AI Risk Score",
+              "displayName": "AI Risk Score",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Created Time",
+              "displayName": "Created Time",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Users",
+              "displayName": "Users",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "AI Analysis History",
+              "displayName": "AI Analysis History",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        2656,
+        0
+      ],
+      "id": "67b7b750-c761-4a2c-bdc9-ef409dd316f1",
+      "name": "Update record",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "06BpS9xqhCrt48pb",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "value": "app9NIHLGmlLCdx5r",
+          "mode": "list",
+          "cachedResultName": "SIEM_Analiz",
+          "cachedResultUrl": "https://airtable.com/app9NIHLGmlLCdx5r"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblExXJIAxhGtNzw0",
+          "mode": "list",
+          "cachedResultName": "Incidents",
+          "cachedResultUrl": "https://airtable.com/app9NIHLGmlLCdx5r/tblExXJIAxhGtNzw0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "User Email": "={{ $('Google Sheets Trigger').item.json['E-posta'] }}",
+            "Departments": "={{ $('Google Sheets Trigger').item.json.Departman }}",
+            "Raw Log": "={{ $('Google Sheets Trigger').item.json['SIEM Logu'] }}",
+            "Priority": "={{ $('Google Sheets Trigger').item.json['Öncelik'] }}",
+            "Status": "Open",
+            "AI Risk Score": 0,
+            "Title": "={{ $('Google Sheets Trigger').item.json['Olay Başlığı'] }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Incident ID",
+              "displayName": "Incident ID",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Title",
+              "displayName": "Title",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "User Email",
+              "displayName": "User Email",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Departments",
+              "displayName": "Departments",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "IT",
+                  "value": "IT"
+                },
+                {
+                  "name": "SOC",
+                  "value": "SOC"
+                },
+                {
+                  "name": "Network",
+                  "value": "Network"
+                },
+                {
+                  "name": "Security",
+                  "value": "Security"
+                },
+                {
+                  "name": "DevOps",
+                  "value": "DevOps"
+                },
+                {
+                  "name": "Other",
+                  "value": "Other"
+                },
+                {
+                  "name": "",
+                  "value": ""
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Raw Log",
+              "displayName": "Raw Log",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Priority",
+              "displayName": "Priority",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Yüksek",
+                  "value": "Yüksek"
+                },
+                {
+                  "name": "Orta",
+                  "value": "Orta"
+                },
+                {
+                  "name": "Düşük",
+                  "value": "Düşük"
+                },
+                {
+                  "name": "Kritik",
+                  "value": "Kritik"
+                },
+                {
+                  "name": "",
+                  "value": ""
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Open",
+                  "value": "Open"
+                },
+                {
+                  "name": "In Progress",
+                  "value": "In Progress"
+                },
+                {
+                  "name": "Under Investigation",
+                  "value": "Under Investigation"
+                },
+                {
+                  "name": "Resolved",
+                  "value": "Resolved"
+                },
+                {
+                  "name": "Closed",
+                  "value": "Closed"
+                },
+                {
+                  "name": "False Positive",
+                  "value": "False Positive"
+                },
+                {
+                  "name": "",
+                  "value": ""
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "AI Summary",
+              "displayName": "AI Summary",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "AI Risk Score",
+              "displayName": "AI Risk Score",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "AI Recommendation",
+              "displayName": "AI Recommendation",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Created Time",
+              "displayName": "Created Time",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Users",
+              "displayName": "Users",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "AI Analysis History",
+              "displayName": "AI Analysis History",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        848,
+        0
+      ],
+      "id": "a1aaf2f7-f310-490c-9b6a-50c145525bac",
+      "name": "Create Incident",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "06BpS9xqhCrt48pb",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "value": "app9NIHLGmlLCdx5r",
+          "mode": "list",
+          "cachedResultName": "SIEM_Analiz",
+          "cachedResultUrl": "https://airtable.com/app9NIHLGmlLCdx5r"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblR77wvIGUs6e17F",
+          "mode": "list",
+          "cachedResultName": "Users",
+          "cachedResultUrl": "https://airtable.com/app9NIHLGmlLCdx5r/tblR77wvIGUs6e17F"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Name": "={{ $('Google Sheets Trigger').item.json['Ad-Soyad'] }}",
+            "Email": "={{ $('Google Sheets Trigger').item.json['E-posta'] }}",
+            "Department": "={{ $('Google Sheets Trigger').item.json.Departman }}",
+            "Incident Count": 1
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "User ID",
+              "displayName": "User ID",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Department",
+              "displayName": "Department",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Incident Count",
+              "displayName": "Incident Count",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        1056,
+        0
+      ],
+      "id": "bac9911e-ff4c-4348-bb8a-4f6986740784",
+      "name": "Create User",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "06BpS9xqhCrt48pb",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "value": "app9NIHLGmlLCdx5r",
+          "mode": "list",
+          "cachedResultName": "SIEM_Analiz",
+          "cachedResultUrl": "https://airtable.com/app9NIHLGmlLCdx5r"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tbljlAS1Dr9hvu1ZV",
+          "mode": "list",
+          "cachedResultName": "AI Analysis History",
+          "cachedResultUrl": "https://airtable.com/app9NIHLGmlLCdx5r/tbljlAS1Dr9hvu1ZV"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Incident": "={{ [ $('Create Incident').first().json.id ] }}",
+            "Prompt Used": "={{ $('Google Sheets Trigger').first().json['SIEM Logu'] }}",
+            "Groq Response": "={{ $('AI Agent').first().json.output }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Analysis ID",
+              "displayName": "Analysis ID",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Incident",
+              "displayName": "Incident",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Prompt Used",
+              "displayName": "Prompt Used",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Groq Response",
+              "displayName": "Groq Response",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Analysis Date",
+              "displayName": "Analysis Date",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        1936,
+        0
+      ],
+      "id": "808eb768-de93-48d5-bf01-0268dca441ba",
+      "name": "Create AI History",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "06BpS9xqhCrt48pb",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Send a message": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Create AI History",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Update record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets Trigger": {
+      "main": [
+        [
+          {
+            "node": "Limit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a record3": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limit": {
+      "main": [
+        [
+          {
+            "node": "Create Incident",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update record": {
+      "main": [
+        [
+          {
+            "node": "Send a message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Incident": {
+      "main": [
+        [
+          {
+            "node": "Create User",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create User": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create AI History": {
+      "main": [
+        [
+          {
+            "node": "Create a record3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "ac4d08da-031a-4581-922c-5f8a60328f48",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "2919e9bc4c586174b7429be92d7032a2a0121897bd4742b2f798d0289eea3eab"
+  },
+  "id": "wq9f4DSKwkPwNd5i",
+  "tags": []
+}
